@@ -1,0 +1,144 @@
+---
+title: Message Types
+description: Learn about the different message types supported by the useLopusChat hook
+---
+
+## Overview
+
+The `useLopusChat` hook is a powerful tool for integrating Lopus AI's generative UI capabilities into your React application. It manages Socket.io connections, message handling, and provides utilities for building AI-powered interfaces.
+
+## Message Types
+
+The hook uses a type-safe message system to distinguish between sent and received messages. Understanding these types is crucial for effective message handling.
+
+### Received Messages (Server → Client)
+
+These messages are sent from the server to the client and can be of the following types:
+
+```tsx
+enum ReceivedMessageType {
+    TEXT = 'TEXT',               // Plain text responses
+    ACTION_REQUEST = 'ACTION_REQUEST', // Requests to execute client-side actions
+    COMPONENT = 'COMPONENT',     // Generated UI components
+    SERVER_ERROR = 'SERVER_ERROR' // Server-side errors
+}
+```
+
+### Sent Messages (Client → Server)
+
+These messages are sent from the client to the server:
+
+```tsx
+enum SentMessageType {
+    QUERY = 'QUERY',           // User queries/prompts
+    SUBMISSION = 'SUBMISSION', // Form submissions
+    CLIENT_ERROR = 'CLIENT_ERROR' // Client-side errors
+}
+```
+
+## Type Guards
+
+Type guards are essential for safely handling different message types. Use them to ensure type safety in your application.
+
+```tsx
+// Check if a message is from the server
+if (isReceivedMessage(message)) {
+    // TypeScript knows this is a ReceivedMessage
+    message.content; // can be string | Record<string, unknown> | React.ReactElement
+}
+
+// Check if a message is from the client
+if (isSentMessage(message)) {
+    // TypeScript knows this is a SentMessage
+    message.content; // can be string | Record<string, unknown>
+}
+```
+
+## Best Practices
+
+1. **Type Safety**: Always use type guards (`isReceivedMessage`, `isSentMessage`) to handle different message types safely.
+2. **Error Handling**: Wrap `sendQuery` and `sendSubmission` calls in try-catch blocks to manage errors effectively.
+3. **Message Filtering**: Use `getMessagesByType` with the appropriate message type enum for type-safe filtering.
+4. **Component Handling**: Remember that component messages contain structured data that needs to be rendered.
+5. **Cleanup**: The hook handles cleanup automatically, but ensure to clean up any custom message handlers.
+
+## Examples
+
+### Handling Different Message Types
+
+```tsx
+function MessageHandler() {
+  const { onMessage } = useLopusChat();
+  
+  useEffect(() => {
+    const removeHandler = onMessage((message) => {
+      if (isReceivedMessage(message)) {
+        switch (message.type) {
+          case ReceivedMessageType.COMPONENT:
+            // Handle new UI component
+            console.log('New component:', message.content);
+            break;
+          case ReceivedMessageType.SERVER_ERROR:
+            // Handle server error
+            toast.error(message.content);
+            break;
+          case ReceivedMessageType.ACTION_REQUEST:
+            // Handle action request
+            console.log('Action requested:', message.content);
+            break;
+        }
+      }
+    });
+
+    return removeHandler;
+  }, [onMessage]);
+
+  return null;
+}
+```
+
+### Error Handling
+
+```tsx
+function ErrorHandler() {
+  const { messages } = useLopusChat();
+
+  useEffect(() => {
+    const errors = messages.filter(msg => 
+      (isReceivedMessage(msg) && msg.type === ReceivedMessageType.SERVER_ERROR) ||
+      (isSentMessage(msg) && msg.type === SentMessageType.CLIENT_ERROR)
+    );
+
+    if (errors.length > 0) {
+      const latestError = errors[errors.length - 1];
+      console.error('Error occurred:', latestError.content);
+    }
+  }, [messages]);
+
+  return null;
+}
+```
+
+## TypeScript Support
+
+The hook provides full TypeScript support with discriminated unions for message types:
+
+```tsx
+type Message = ReceivedMessage | SentMessage;
+
+interface ReceivedMessage {
+    sender: SenderType.LOPUS;
+    type: ReceivedMessageType;
+    content: string | Record<string, unknown> | React.ReactElement;
+    timestamp: Date;
+}
+
+interface SentMessage {
+    sender: SenderType.USER;
+    type: SentMessageType;
+    content: string | Record<string, unknown>;
+    timestamp: Date;
+}
+```
+
+This structure should help you understand and utilize the `useLopusChat` hook effectively, focusing on message types and best practices.

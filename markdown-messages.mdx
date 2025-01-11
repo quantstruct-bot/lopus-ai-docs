@@ -1,82 +1,46 @@
 ---
-title: 'Quickstart'
-description: 'Generate personalized UI to guide your users with Lopus AI'
+title: Render Markdown Messages
+description: Learn how to render markdown messages using the `useLopusChat` hook
 ---
 
-## 1. Install the Lopus AI SDK
+This guide will walk you through the process of rendering markdown messages in your React application using the `useLopusChat` hook. We'll cover the setup, rendering logic, and best practices to ensure a smooth integration.
 
-Install `lopus-ai` in your React project:
+## Prequisites
+
+1. Ensure you have a React application setup
+2. Complete the [quickstart guide](/quickstart)
+2. Install `react-markdown` package
 
 <CodeGroup>
   ```bash npm
-  npm install lopus-ai@latest
+  npm install react-markdown
   ```
 
   ```bash pnpm
-  pnpm add lopus-ai@latest
+  pnpm add react-markdown
   ```
 
   ```bash yarn
-  yarn add lopus-ai@latest
+  yarn add react-markdown
   ```
 
   ```bash bun
-  bun add lopus-ai@latest
+  bun add react-markdown
   ```
 
   ```bash deno
-  deno install npm:lopus-ai@latest
+  deno install npm:react-markdown@latest
   ```
 </CodeGroup>
 
-## 2. Initialize the Chat Hook
+## Upgrade Your Message Component with `ReactMarkdown`
 
-Import and initialize the `useLopusChat` hook in your React component:
-
-```tsx ChatComponent.tsx
-'use client';
-import { useLopusChat } from "lopus-ai";
-
-export default function ChatComponent() {
-  const { messages, sendQuery, isLoading } = useLopusChat({
-    apiKey: 'your_api_key_here'
-  });
-
-  return (
-    <div>
-      {messages.map((message, index) => (
-        <div key={index}>{String(message.content)}</div>
-      ))}
-    </div>
-  );
-}
-```
-
-<Note>
-  Replace `your_api_key_here` with your actual Lopus AI API key. You can find your API key in the [dashboard](https://dashboard.lopus.ai).
-</Note>
-
-The `useLopusChat` hook provides:
-
-* `messages`: An array of chat messages
-
-* `sendQuery`: A function to send new messages
-
-* `isLoading`: A boolean indicating if a response is being generated
-
-You should see a confirmation that you are authenticated:
-
-<Frame caption="Authentication confirmation from Lopus AI">
-  ![](/images/lopus_authentication.png)
-</Frame>
-
-## 3. Design Chat Components
-
-Create 3 necessary components for Messages, Message List, and Chat Input. Each component includes error handling, type checking, and styling.
+Return messages inside a `ReactMarkdown` component instead of a `div`:
 
 <CodeGroup>
   ```tsx Message.tsx
   import React, { ReactElement, JSXElementConstructor } from 'react';
+  import ReactMarkdown from 'react-markdown';
 
   export function Message({ message }: MessageProps) {
     return (
@@ -90,14 +54,22 @@ Create 3 necessary components for Messages, Message List, and Chat Input. Each c
         {(() => {
           switch (typeof message.content) {
             case 'string':
-              return <div>{message.content}</div>;
+              return (
+                <ReactMarkdown className="prose max-w-none">
+                  {message.content}
+                </ReactMarkdown>
+              );
             case 'object':
               if (React.isValidElement(message.content)) {
                 return message.content;
               }
               return <div>{JSON.stringify(message.content)}</div>;
             default:
-              return <div>{String(message.content)}</div>;
+              return (
+                <ReactMarkdown className="prose max-w-none">
+                  {String(message.content)}
+                </ReactMarkdown>
+              );
           }
         })()}
       </div>
@@ -185,39 +157,40 @@ Create 3 necessary components for Messages, Message List, and Chat Input. Each c
     isLoading: boolean;
   }
   ```
+
+  ```tsx ChatComponent.tsx
+  'use client';
+  import { useLopusChat } from "lopus-ai";
+  import { MessageList } from './components/MessageList';
+  import { ChatInput } from './components/ChatInput';
+
+  export default function ChatComponent() {
+    const { messages, sendQuery, isLoading } = useLopusChat({
+      apiKey: 'your_api_key_here',
+    });
+
+    return (
+      <div className="flex flex-col h-screen p-4 bg-gray-100">
+        <MessageList messages={messages} isLoading={isLoading} />
+        <ChatInput onSubmit={sendQuery} isLoading={isLoading} />
+      </div>
+    );
+  }
+  ```
 </CodeGroup>
 
-Make sure to update your `ChatComponent.tsx` to use the components:
-
-```tsx ChatComponent.tsx
-'use client';
-import { useLopusChat } from "lopus-ai";
-import { MessageList } from './components/MessageList';
-import { ChatInput } from './components/ChatInput';
-
-export default function ChatComponent() {
-  const { messages, sendQuery, isLoading } = useLopusChat({
-    apiKey: 'your_api_key_here',
-  });
-
-  return (
-    <div className="flex flex-col h-screen p-4 bg-gray-100">
-      <MessageList messages={messages} isLoading={isLoading} />
-      <ChatInput onSubmit={sendQuery} isLoading={isLoading} />
-    </div>
-  );
-}
-```
+Your Lopus Chat Component can now render markdown messages:
 
 <Frame as="div" caption="Lopus Chat Component">
   ![](/images/lopus_chat_component.png)
 </Frame>
 
-For a complete implementation with advanced features like error handling and component rendering, see our example app:
 
-## Next Steps
+# Best Practices
 
-* Learn how to [Render Markdown Messages](/markdown-messages)
+1. **Type Safety:** Use type guards like `isReceivedMessage` to safely handle different message types.
+2. **Error Handling:** Wrap `sendQuery` and `sendSubmission` calls in try-catch blocks to manage errors effectively.
+3. **Component Handling:** For messages containing components, ensure they are rendered correctly.
+4. **Cleanup:** The hook manages cleanup automatically, but ensure to remove any custom message handlers if added.
 
-* Learn about different [Message Types](#message-types) supported by Lopus AI
-
+By following these steps, you can effectively render markdown messages in your React application using the `useLopusChat` hook. This setup allows for a rich, interactive chat experience.
